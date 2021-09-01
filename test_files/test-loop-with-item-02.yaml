@@ -1,0 +1,22 @@
+-
+    name: 'Install required packages'
+    hosts: localhost
+    vars:
+        packages:
+            - httpd
+            - binutils
+            - glibc
+            - ksh
+            - libaio
+            - libXext
+            - gcc
+            - make
+            - sysstat
+            - unixODBC
+            - mongodb
+            - nodejs
+            - grunt
+    tasks:
+        -
+            with_items: "{{ packages }}"
+            yum: 'name={{ item }} state=present'

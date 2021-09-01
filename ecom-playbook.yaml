@@ -1,0 +1,178 @@
+#1
+# Pre-requisites
+- name: 'Pre-requisites'
+  hosts: target3
+  become: true
+  tasks:
+
+  - name: Install firewalld
+    yum:
+      name:
+        - firewalld
+        - epel-release  
+        - python36-devel  
+        - mysql-devel
+        - gcc
+        - python2-PyMySQL
+          #- MySQL-python
+          #- python-pip  
+      state: latest
+
+# PIP Install
+- name: 'pip install'
+  hosts: target3
+  #become: true
+  tasks:
+
+  - name: Install the Python 2.7 #needed for db
+    pip: 
+      name: pymysql
+      extra_args: --user
+  
+  - name: Install the Python 3.x #needed for db
+    pip: 
+      name: pymysql
+      executable: pip3
+      extra_args: --user
+
+  - name: Install the Python mysqlclient module
+    pip:
+      name: mysqlclient
+      executable: pip3
+      extra_args: --user
+
+
+# Configure firewalld
+- name: 'Configure firewalld'
+  hosts: target3
+  become: true
+  tasks:
+
+  #A
+  - name: start firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+#2
+# Install and configure MariaDB
+- name: 'Install and configure MariaDB'
+  hosts: target3
+  become: true
+  tasks:
+
+  #A
+  - name: Install MariaDb
+    yum:
+      name: mariadb-server
+      state: present
+  #B
+  - name: Start MariaDB
+    service:
+      name: mariadb
+      state: started
+      enabled: yes
+  #C
+  - name: Enable port 3306 for MariaDB access
+    firewalld:
+      zone: public
+      port: 3306/tcp
+      permanent: yes
+      state: enabled
+  #D
+  - name: Reload service firewalld
+    systemd:
+      name: firewalld
+      state: reloaded
+  #E
+  - name: Create a new MariaDB database with name 'ecomdb'
+    mysql_db:
+      name: ecomdb
+      state: present
+  #F
+  - name: Create MariaDB database user with name 'ecomuser' and password 'ecompassword' with all database privileges
+    mysql_user:
+      name: ecomuser
+      password: ecompassword
+      priv: '*.*:ALL'
+      state: present
+  #G
+  - name: Create load product inventory script
+    shell:
+      cmd: |
+        cat > db-load-script.sql <<-EOF
+        USE ecomdb;
+        CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
+
+        INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
+
+        EOF
+  #H
+  - name: 'Execute script to load product inventory'
+    shell: mysql < db-load-script.sql
+
+
+#4
+# Deploy and configure web
+- name: 'Install required packages for web display'
+  hosts: target3
+  become: true
+  vars:
+    packages:
+      - httpd
+      - php
+      - php-mysqlnd
+      - git # for later use
+  tasks:
+  - with_items: "{{ packages }}"
+    yum: 'name={{ item }} state=present'
+
+  #B
+  - name: Enable ports 80 for http access
+    firewalld:
+      zone: public
+      port: 80/tcp
+      permanent: yes
+      state: enabled
+  #C
+  - name: Reload service firewalld
+    systemd:
+      name: firewalld
+      state: reloaded
+  #D
+  - name: 'Configure httpd'
+    shell: sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
+
+  #E
+  - name: Start httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+  #F
+  - name: 'Download code and placed on wed directory'
+    command: 'git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/'
+
+  #G
+  - name: 'Update index.php file to connect to the right DB'
+    shell: sudo sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
+
+  #H
+  - name: 'Update index.php file to connect to the right DB'
+    shell: sudo sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
+
+#5
+# Test ecommerce site
+- name: 'Simple curl'
+  hosts: target3
+  become: true
+  tasks:
+
+  #A
+  - name: 'test with curl'
+    shell: curl http://localhost
+    register: command_output
+
+  - debug:
+      var: command_output.stdout_lines
