@@ -4,7 +4,7 @@
   hosts: target3
   tasks:
 
-  - name: Install firewalld
+  - name: Pre-requisites packages
     become: true
     yum:
       name:
@@ -135,6 +135,8 @@
   - name: 'Configure httpd'
     become: true
     shell: sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
+    args:
+      warn: false
 
   #E
   - name: Start httpd
@@ -145,17 +147,22 @@
       enabled: yes
   #F
   - name: 'Download code and placed on web directory'
+    become: true
     command: 'git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/'
 
   #G
   - name: 'Update index.php file to connect to the right DB'
     become: true
     shell: sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
+    args:
+      warn: false
 
   #H
   - name: 'Update index.php file to connect to the right DB'
     become: true
     shell: sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
+    args:
+      warn: false
 
   #A
   - name: 'A simple test with curl'
