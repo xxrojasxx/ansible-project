@@ -1,4 +1,4 @@
-#1
+
 # Pre-requisites
 - name: 'Deploy an e-commerce website'
   hosts: target3
@@ -16,19 +16,18 @@
         - python2-PyMySQL
       state: latest
   
-  - name: PIP Install the Python 3.x CON ROOT #needed for db
+  - name: PIP Install the Python 3.x WITH ROOT #needed for db
     become: true
     pip: 
       name: pymysql
       executable: pip3
 
-  - name: PIP Install the Python mysqlclient module CON ROOT
+  - name: PIP Install the Python mysqlclient module WITH ROOT
     become: true
     pip:
       name: mysqlclient
       executable: pip3
 
-  #A
   - name: Start firewalld
     become: true
     service:
@@ -36,20 +35,19 @@
       state: started
       enabled: yes
 
-  #A
   - name: Install MariaDb
     become: true
     yum:
       name: mariadb-server
       state: present
-  #B
+
   - name: Start MariaDB
     become: true
     service:
       name: mariadb
       state: started
       enabled: yes
-  #C
+
   - name: Enable port 3306 for MariaDB access
     become: true
     firewalld:
@@ -57,19 +55,19 @@
       port: 3306/tcp
       permanent: yes
       state: enabled
-  #D
+
   - name: Reload service firewalld
     become: true
     systemd:
       name: firewalld
       state: reloaded   
-  #E
+
   - name: Create a new MariaDB database with name 'ecomdb'
     become: true
     mysql_db:
       name: ecomdb
       state: present
-  #F
+
   - name: Create MariaDB database user with name 'ecomuser' and password 'ecompassword' with all database privileges
     become: true
     mysql_user:
@@ -77,7 +75,7 @@
       password: ecompassword
       priv: '*.*:ALL'
       state: present
-  #G
+
   - name: Create load product inventory script
     become: true
     shell:
@@ -89,22 +87,22 @@
         INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
 
         EOF
-  #H
+
   - name: Execute script to load product inventory
     become: true
     shell: mysql < db-load-script.sql
-#4
+
 # Deploy and configure web
 
-  - name: Install firewalld
-      become: true
-      yum:
-        name:
-          - httpd
-          - php
-          - php-mysqlnd
-          - git # for later use
-        state: latest
+  - name: Install required packages for web display
+    become: true
+    yum:
+      name:
+        - httpd
+        - php
+        - php-mysqlnd
+        - git # for later use
+      state: latest
 
 #- name: Install required packages for web display
 #  hosts: target3
@@ -120,7 +118,7 @@
 #    yum: 'name={{ item }} state=present'
 
   #B
-  - name: Enable ports 80 for http access
+  - name: Firewalld Enable ports 80 for http access
     become: true
     firewalld:
       zone: public
