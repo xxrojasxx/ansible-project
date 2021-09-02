@@ -1,6 +1,6 @@
 #1
 # Pre-requisites
-- name: 'Pre-requisites'
+- name: 'Deploy an e-commerce website'
   hosts: target3
   tasks:
 
@@ -15,12 +15,6 @@
         - gcc
         - python2-PyMySQL
       state: latest
-
-# PIP Install
-  #- name: Install the Python 2.7 #needed for db
-  #  pip: 
-  #    name: pymysql
-  #    extra_args: --user
   
   - name: PIP Install the Python 3.x CON ROOT #needed for db
     become: true
@@ -33,14 +27,6 @@
     pip:
       name: mysqlclient
       executable: pip3
-      extra_args: --user
-
-
-# Configure firewalld
-#- name: 'Configure firewalld'
-#  hosts: target3
-#  become: true
-#  tasks:
 
   #A
   - name: Start firewalld
@@ -49,13 +35,6 @@
       name: firewalld
       state: started
       enabled: yes
-
-#2
-# Install and configure MariaDB
-#- name: 'Install and configure MariaDB'
-#  hosts: target3
-#  become: true
-#  tasks:
 
   #A
   - name: Install MariaDb
@@ -83,8 +62,7 @@
     become: true
     systemd:
       name: firewalld
-      state: reloaded
-      
+      state: reloaded   
   #E
   - name: Create a new MariaDB database with name 'ecomdb'
     become: true
@@ -117,18 +95,29 @@
     shell: mysql < db-load-script.sql
 #4
 # Deploy and configure web
-- name: Install required packages for web display
-  hosts: target3
-  become: true
-  vars:
-    packages:
-      - httpd
-      - php
-      - php-mysqlnd
-      - git # for later use
-  tasks:
-  - with_items: "{{ packages }}"
-    yum: 'name={{ item }} state=present'
+
+  - name: Install firewalld
+      become: true
+      yum:
+        name:
+          - httpd
+          - php
+          - php-mysqlnd
+          - git # for later use
+        state: latest
+
+#- name: Install required packages for web display
+#  hosts: target3
+#  become: true
+#  vars:
+#    packages:
+#      - httpd
+#      - php
+#      - php-mysqlnd
+#      - git # for later use
+#  tasks:
+#  - with_items: "{{ packages }}"
+#    yum: 'name={{ item }} state=present'
 
   #B
   - name: Enable ports 80 for http access
@@ -169,13 +158,6 @@
   - name: 'Update index.php file to connect to the right DB'
     become: true
     shell: sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
-
-#5
-# Test ecommerce site
-#- name: 'Simple curl'
-#  hosts: target3
-#  become: true
-#  tasks:
 
   #A
   - name: 'A simple test with curl'
