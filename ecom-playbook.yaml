@@ -76,21 +76,37 @@
       priv: '*.*:ALL'
       state: present
 
+  #- name: Create load product inventory script
+  #  become: true
+  #  shell:
+  #    cmd: |
+  #      cat > db-load-script.sql <<-EOF
+  #      USE ecomdb;
+  #      CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default #NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
+#
+  #      INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),#("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch",#"90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop",#"150","c-4.png");
+#
+  #      EOF
+
+
   - name: Create load product inventory script
-    become: true
-    shell:
-      cmd: |
-        cat > db-load-script.sql <<-EOF
+    copy:
+      dest: /tmp/db-load-script.sql
+      content: |
         USE ecomdb;
         CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
-
         INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
+  #- name: Execute script to load product inventory
+  #  become: true
+  #  shell: mysql < db-load-script.sql
 
-        EOF
 
   - name: Execute script to load product inventory
     become: true
-    shell: mysql < db-load-script.sql
+    mysql_db:
+      name: ecomdb
+      state: import
+      target: /tmp/db-load-script.sql
 
 # Deploy and configure web
 
@@ -103,19 +119,6 @@
         - php-mysqlnd
         - git # for later use
       state: latest
-
-#- name: Install required packages for web display
-#  hosts: target3
-#  become: true
-#  vars:
-#    packages:
-#      - httpd
-#      - php
-#      - php-mysqlnd
-#      - git # for later use
-#  tasks:
-#  - with_items: "{{ packages }}"
-#    yum: 'name={{ item }} state=present'
 
   #B
   - name: Firewalld Enable ports 80 for http access
@@ -131,43 +134,49 @@
     systemd:
       name: firewalld
       state: reloaded
-  #D
-  - name: 'Configure httpd'
-    become: true
-    shell: sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
-    args:
-      warn: false
 
-  #E
+  
+  # lineinfile applies to a full line
+  - name: Configure httpd with "replace"
+    become: true
+    replace:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: 'index\.html'
+      replace: 'index.php'
+      #regexp: '(\s+)index\.html(\s+.*)?$'
+      #replace: '\1index.php\2'
+
   - name: Start httpd
     become: true
     service:
       name: httpd
       state: started
       enabled: yes
+
   #F
   - name: 'Download code and placed on web directory'
     become: true
     command: 'git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/'
 
-  #G
-  - name: 'Update index.php file to connect to the right DB'
+  - name: Update index.php file to connect to the right DB with "replace"
     become: true
-    shell: sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
-    args:
-      warn: false
-
-  #H
-  - name: 'Update index.php file to connect to the right DB'
-    become: true
-    shell: sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
-    args:
-      warn: false
+    replace:
+      path: /var/www/html/index.php
+      regexp: '172.20.1.101'
+      replace: localhost
 
   #A
-  - name: 'A simple test with curl'
-    shell: curl http://localhost
-    register: command_output
+  # Next 2 tasks goes together in order to check whether website is available
+  - name: Testing e-commerce "with URI"
+    uri:
+      url: http://localhost
+      #method: GET
+      return_content: yes
+      #status_code: 200
+      #body_format: json
+    register: webpage
+    
 
-  - debug:
-      var: command_output.stdout_lines
+  - name: Fail if "Kodekloud E-Commerce" is not present in the page content
+    fail:
+    when: "'Kodekloud E-Commerce' not in webpage.content"
