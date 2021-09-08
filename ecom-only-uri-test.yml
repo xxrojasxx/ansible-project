@@ -1,0 +1,19 @@
+- name: 'Deploy an e-commerce website'
+  hosts: target3
+  tasks:
+
+  # Next 2 tasks goes together in order to check website is available
+  - name: Testing e-commerce
+    uri:
+      url: http://localhost
+      #method: GET
+      return_content: yes
+      #status_code: 200
+      #body_format: json
+    register: webpage
+    
+
+  - name: Fail if "Kodekloud E-Commerce" is not present in the page content
+    fail:
+    when: "'Kodekloud E-Commerce' not in webpage.content"
+

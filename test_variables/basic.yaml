@@ -1,0 +1,7 @@
+- hosts: localhost
+  vars:
+    basic_var: Uno variable
+  tasks:
+  - name:
+    debug:
+      msg: "{{ basic_var }}" 
