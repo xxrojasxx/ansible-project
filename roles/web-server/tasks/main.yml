@@ -1,0 +1,12 @@
+---
+# tasks file for web-server
+
+#- name: Update All Packages
+#  yum:
+#    name: '*'
+#    state: latest
+- name: Install Apache
+  become: true
+  yum: 
+    name: httpd
+    state: installed

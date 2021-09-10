@@ -1,0 +1,8 @@
+- hosts: target3
+  become: true
+  tasks:
+  - name: Public IP
+    shell:
+      cmd: 'curl -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip'
+    register: curl
+  - debug: var=curl.stdout_lines

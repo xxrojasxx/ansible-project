@@ -1,0 +1,7 @@
+- hosts: target3
+  become: true
+  roles:
+    #- apache
+    #- cleaner
+    - web-server
+    - db-install

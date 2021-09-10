@@ -1,0 +1,5 @@
+- hosts: localhost
+  tasks:
+  - name: Display value
+    debug:
+      msg: "{{ basic_var }}" 

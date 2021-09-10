@@ -1,0 +1,23 @@
+---
+# tasks file for apache
+
+#- name: Update All Packages
+#  yum:
+#    name: '*'
+#    state: latest
+- name: Install Apache
+  yum: 
+    name: httpd
+    state: installed
+- name: Create The HTML File
+  shell: echo "Hello From The Ansible Challenge" > /var/www/html/index.html
+  args:
+    executable: /bin/bash
+  notify:
+    - Reload Apache
+- name: Public IP
+  shell:
+    cmd: 'curl -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip'
+  register: curl
+
+- debug: var=curl.stdout_lines

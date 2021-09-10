@@ -1,0 +1,9 @@
+---
+# handlers file for db-install
+
+- name: Start DB
+  become: true
+  service:
+    name: "{{ db_server }}"
+    state: started
+    enabled: yes

@@ -1,0 +1,21 @@
+- hosts: target3
+  become: true
+  vars:
+    packages:
+      - httpd
+      - nano
+      - tree
+  tasks:
+  - name: Install Software 
+    yum:
+      name: "{{ item }}"
+      state: installed
+    loop: "{{ packages }} "
+
+  - name: Remove Software 
+    yum:
+      name: 
+        - httpd
+        - nano
+        - tree
+      state: removed

@@ -1,0 +1,15 @@
+---
+# tasks file for db-install
+
+
+- name: Install MariaDB
+  become: true
+  yum: 
+    #name: mariadb-server
+    name: "{{ db_server }}"
+    state: installed
+  notify:
+    - Start DB 
+- name: Display DB installed
+  debug:
+    msg: "{{ db_server }}"
