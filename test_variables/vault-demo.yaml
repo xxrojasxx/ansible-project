@@ -1,0 +1,13 @@
+- hosts: localhost
+  vars:
+    vault_token:
+    vault_url:
+    db_password:
+    system_password:
+  tasks:
+  - name: Value for db_password
+    debug: 
+      msg: "db_password: {{ db_password }}"
+  - name: Value for system_password
+    debug: 
+      msg: "system_password: {{ system_password }}"

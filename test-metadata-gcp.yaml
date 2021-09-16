@@ -1,3 +1,4 @@
+# Retrieve gcp vm IP
 - hosts: target3
   become: true
   tasks:
