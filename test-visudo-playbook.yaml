@@ -1,0 +1,52 @@
+- name: 'Test visudo'
+  hosts: localhost
+  tasks:
+
+# Validate the sudoers file before saving
+  #- name: Prueba edición visudo
+  #  become: true
+  #  lineinfile:
+  #    path: /tmp/demo_visudo
+  #    state: present
+  #    line: 'nexus ALL=(ALL) NOPASSWD: ALL'
+  #    insertafter: '^## Same thing without a password'
+  #    validate: '/usr/sbin/visudo -cf %s'
+
+  #- name: Validate the sudoers file before saving
+  #  ansible.builtin.lineinfile:
+  #    path: /tmp/demo_visudo
+  #    state: present
+  #    regexp: '^%wheel ALL=(ALL) ALL'
+  #    line: '%ROOT ALL=(ALL) NOPASSWD: ALL'
+  #    insertafter: '^caracas'
+  #    validate: /usr/sbin/visudo -cf %s
+
+  #- name: Validate the sudoers file before saving
+  #  lineinfile:
+  #    path: /tmp/fake_services
+  #    regexp: '^# amanda backup services'
+  #    insertbefore: '^10083/tcp'
+  #    line: '# amanda backup services is very fake'
+
+  #- name: Para ejecutar "nexus as a service" en boot time
+  #  become: true
+  #  lineinfile:
+  #    path: /tmp/fake_rc
+  #    regexp: '^run_as_user'
+  #    line: 'run_as_user="nexus"'
+
+  # - name: TEST FAKE entrada en "nexus.vmoptions"
+  #   become: true
+  #   lineinfile:
+  #     path: /tmp/fake_vmoptions
+  #     state: present
+  #     line: '-Djava.util.prefs.userRoot=/opt/nexus/.java'
+  #     insertafter: '^-Djdk.tls.ephemeralDHKeySize=2048'
+
+  - name: Revisar status de "nexus service"
+    command: systemctl status ssh
+    register: result
+    ignore_errors: yes
+
+  - debug:
+      var: result.stdout_lines

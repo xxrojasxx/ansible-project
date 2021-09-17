@@ -1,9 +1,9 @@
 - hosts: localhost
   vars:
-    vault_token:
-    vault_url:
-    db_password:
-    system_password:
+    vault_token: 's.mrIoTFiTivIIS5s6fLQwkyp3'
+    vault_url: 'http://127.0.0.1:8200'
+    db_password: "{{ lookup('hashi_vault', 'secret=secret/passwords/db:data token={{ vault_token }} url={{ vault_url }}') }}"
+    system_password: "{{ lookup('hashi_vault', 'secret=secret/passwords/system:data token={{ vault_token }} url={{ vault_url }}') }}"
   tasks:
   - name: Value for db_password
     debug: 

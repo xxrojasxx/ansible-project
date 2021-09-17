@@ -1,0 +1,116 @@
+# Deploying nexus on Suse15
+
+- name: 'Deploying nexus on Suse15'
+  hosts: target3
+  tasks:
+  
+  - name: Updating SUSE OS
+    become: true
+    zypper: 
+      name: '*'
+      state: latest
+
+  - name: Pre-requisites packages
+    become: true
+    zypper:
+      name:
+        - net-tools-deprecated
+        - java-1_8_0-openjdk-headless
+      state: latest
+
+  - name: Create "nexus" group
+    become: true
+    group:
+      name: nexus
+      state: present
+
+  - name: Create "nexus" user
+    become: true
+    user:
+      name: nexus
+      comment: Usuario dedicado para nexus
+      group: nexus
+  
+  - name: Descargar último nexus y untar
+    become: true
+    unarchive:
+      src: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+      dest: /opt
+      remote_src: yes
+  
+  - name: Mover ficheros nexus a carpeta "/opt/nexus"
+    become: true
+    command: mv /opt/nexus-3.34* /opt/nexus
+  
+  # Validate the sudoers file before saving
+  - name: Editar y validar visudo
+    become: true
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      line: 'nexus ALL=(ALL) NOPASSWD: ALL'
+      insertafter: '^## Same thing without a password'
+      validate: '/usr/sbin/visudo -cf %s'
+
+  - name: Crear directorio "/opt/nexus/.java"
+    become: true
+    file:
+      path: /opt/nexus/.java
+      state: directory
+
+  - name: Asignar el ownership de la instalación a "nexus:nexus"
+    become: true
+    file:
+      path: /opt/nexus
+      owner: nexus
+      group: nexus
+      mode: '0755'
+  
+  - name: Insertar valor para ejecutar "nexus as a service" en boot time
+    become: true
+    lineinfile:
+      path: /opt/nexus/bin/nexus.rc
+      regexp: '^run_as_user'
+      line: 'run_as_user="nexus"'
+  
+  - name: Agregar entrada en "nexus.vmoptions"
+    become: true
+    lineinfile:
+      path: /opt/nexus/bin/nexus.vmoptions
+      state: present
+      line: '-Djava.util.prefs.userRoot=/opt/nexus/.java'
+      insertafter: '^-Djdk.tls.ephemeralDHKeySize=2048'
+  
+  - name: Crear servicio nexus en systemd
+    copy:
+      dest: /etc/systemd/system/nexus.service
+      content: |
+        [Unit]
+        Description=nexus service
+        After=network.target
+        
+        [Service]
+        Type=forking
+        LimitNOFILE=65536
+        ExecStart=/opt/nexus/bin/nexus start
+        ExecStop=/opt/nexus/bin/nexus stop
+        User=nexus
+        Restart=on-abort
+        
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: Iniciar y habilitar servicio systemd
+    become: true
+    systemd:
+      name: nexus
+      state: started
+      enabled: yes
+
+  - name: Revisar status de "nexus service"
+    command: systemctl status ssh
+    register: result
+    ignore_errors: yes
+
+  - debug:
+      var: result.stdout_lines
