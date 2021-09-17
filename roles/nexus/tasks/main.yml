@@ -108,7 +108,7 @@
       enabled: yes
 
   - name: Check status for "nexus service"
-    command: systemctl status ssh
+    command: systemctl status nexus
     register: result
     ignore_errors: yes
 
