@@ -31,19 +31,19 @@
       comment: Usuario dedicado para nexus
       group: nexus
   
-  - name: Descargar último nexus y untar
+  - name: Download latest nexus and untar
     become: true
     unarchive:
       src: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
       dest: /opt
       remote_src: yes
   
-  - name: Mover ficheros nexus a carpeta "/opt/nexus"
+  - name: Move default directory to "/opt/nexus"
     become: true
     command: mv /opt/nexus-3.34* /opt/nexus
   
   # Validate the sudoers file before saving
-  - name: Editar y validar visudo
+  - name: Edit and validate visudo
     become: true
     lineinfile:
       path: /etc/sudoers
@@ -52,13 +52,13 @@
       insertafter: '^## Same thing without a password'
       validate: '/usr/sbin/visudo -cf %s'
 
-  - name: Crear directorio "/opt/nexus/.java"
+  - name: Create directory "/opt/nexus/.java"
     become: true
     file:
       path: /opt/nexus/.java
       state: directory
 
-  - name: Asignar el ownership de la instalación a "nexus:nexus"
+  - name: Give installation ownership to "nexus:nexus"
     become: true
     file:
       path: /opt/nexus
@@ -66,14 +66,14 @@
       group: nexus
       mode: '0755'
   
-  - name: Insertar valor para ejecutar "nexus as a service" en boot time
+  - name: Insert value to execute "nexus as a service" on boot time
     become: true
     lineinfile:
       path: /opt/nexus/bin/nexus.rc
       regexp: '^run_as_user'
       line: 'run_as_user="nexus"'
   
-  - name: Agregar entrada en "nexus.vmoptions"
+  - name: Add value on "nexus.vmoptions"
     become: true
     lineinfile:
       path: /opt/nexus/bin/nexus.vmoptions
@@ -81,7 +81,7 @@
       line: '-Djava.util.prefs.userRoot=/opt/nexus/.java'
       insertafter: '^-Djdk.tls.ephemeralDHKeySize=2048'
   
-  - name: Crear servicio nexus en systemd
+  - name: Create nexus service on systemd
     copy:
       dest: /etc/systemd/system/nexus.service
       content: |
@@ -100,14 +100,14 @@
         [Install]
         WantedBy=multi-user.target
 
-  - name: Iniciar y habilitar servicio systemd
+  - name: Start and Enable nexus service
     become: true
     systemd:
       name: nexus
       state: started
       enabled: yes
 
-  - name: Revisar status de "nexus service"
+  - name: Check status for "nexus service"
     command: systemctl status ssh
     register: result
     ignore_errors: yes
